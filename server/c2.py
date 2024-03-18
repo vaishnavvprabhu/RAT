@@ -207,7 +207,7 @@ def webcam(target, count):
     os.makedirs(WBC_DIRECTORY, exist_ok=True)
 
     # Open the file for writing.
-    file_name = f'{WBC_DIRECTORY}/target_{target}/webcam_pic_{count}.jpg'
+    file_name = f'{WBC_DIRECTORY}/webcam_pic_{count}.jpg'
     try:
         f = open(file_name, 'wb')
     except IOError as e:
